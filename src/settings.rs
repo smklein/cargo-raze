@@ -45,7 +45,7 @@ pub struct RazeSettings {
    *
    * This comes in the form of a "triple", such as "x86_64-unknown-linux-gnu"
    */
-  #[serde(default = "default_target")]
+  #[serde(default = "default_raze_settings_field_target")]
   pub target: String,
 
   /** Any crate-specific configuration. See CrateSetings for details. */
@@ -61,23 +61,23 @@ pub struct RazeSettings {
    *
    * TODO(acmcarther): Does this have a non-bazel analogue?
    */
-  #[serde(default = "default_gen_workspace_prefix")]
+  #[serde(default = "default_raze_settings_field_gen_workspace_prefix")]
   pub gen_workspace_prefix: String,
 
   /** How to generate the dependencies. See GenMode for details. */
-  #[serde(default = "default_genmode")]
+  #[serde(default = "default_raze_settings_field_genmode")]
   pub genmode: GenMode,
 }
 
-fn default_target() -> String {
+fn default_raze_settings_field_target() -> String {
   "x86_64-unknown-linux-gnu".to_owned()
 }
 
-fn default_gen_workspace_prefix() -> String {
+fn default_raze_settings_field_gen_workspace_prefix() -> String {
   "raze".to_owned()
 }
 
-fn default_genmode() -> GenMode {
+fn default_raze_settings_field_genmode() -> GenMode {
   GenMode::Vendored
 }
 
@@ -125,10 +125,10 @@ pub struct CrateSettings {
    * Many build scripts will not function, as they will still be built hermetically. However, build
    * scripts that merely generate files into OUT_DIR may be fully functional.
    */
-  #[serde(default = "default_gen_buildrs")]
+  #[serde(default = "default_crate_settings_field_gen_buildrs")]
   pub gen_buildrs: bool,
 }
 
-fn default_gen_buildrs() -> bool {
+fn default_crate_settings_field_gen_buildrs() -> bool {
   false
 }

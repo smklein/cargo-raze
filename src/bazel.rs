@@ -16,7 +16,7 @@ use cargo::CargoError;
 use cargo::util::CargoResult;
 use context::CrateContext;
 use context::WorkspaceContext;
-use planning::PlannedBuild;
+use new_planning::PlannedBuild;
 use rendering::BuildRenderer;
 use rendering::FileOutputs;
 use rendering::RenderDetails;
@@ -264,7 +264,7 @@ mod tests {
   pub use context::*;
   pub use hamcrest::core::expect;
   pub use hamcrest::prelude::*;
-  pub use planning::PlannedBuild;
+  pub use new_planning::PlannedBuild;
   pub use rendering::FileOutputs;
   pub use rendering::RenderDetails;
 

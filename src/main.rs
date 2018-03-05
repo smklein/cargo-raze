@@ -18,6 +18,8 @@ extern crate rustc_serialize;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate serde_json;
+extern crate tempdir;
 extern crate tera;
 extern crate toml;
 
@@ -27,18 +29,24 @@ extern crate hamcrest;
 
 mod context;
 mod planning;
+mod new_planning;
 mod rendering;
 mod settings;
 mod util;
 mod bazel;
 mod license;
+mod metadata;
+mod error;
 
 use bazel::BazelRenderer;
 use cargo::CargoError;
 use cargo::CliResult;
 use cargo::util::CargoResult;
 use cargo::util::Config;
-use planning::BuildPlanner;
+use new_planning::BuildPlanner;
+use new_planning::BuildPlannerImpl;
+use new_planning::CargoSubcommandMetadataFetcher;
+use new_planning::CargoWorkspaceFiles;
 use rendering::BuildRenderer;
 use rendering::FileOutputs;
 use rendering::RenderDetails;
@@ -50,6 +58,7 @@ use std::fs::File;
 use std::io::Read;
 use std::io::Write;
 use std::path::Path;
+use std::path::PathBuf;
 
 #[derive(Debug, RustcDecodable)]
 struct Options {
@@ -100,13 +109,19 @@ fn real_main(options: Options, cargo_config: &Config) -> CliResult {
 
   try!(validate_settings(&mut settings));
 
-  let mut planner = try!(BuildPlanner::new(settings.clone(), cargo_config));
+  let mut planner = BuildPlannerImpl::new(Box::new(CargoSubcommandMetadataFetcher));
 
-  if let Some(host) = options.flag_host {
-    try!(planner.set_registry_from_url(host));
+  let toml_path = PathBuf::from("./Cargo.toml");
+  let mut lock_path_opt = None;
+  if fs::metadata("./Cargo.lock").is_ok() {
+    lock_path_opt = Some(PathBuf::from("./Cargo.lock"));
   }
+  let files = CargoWorkspaceFiles {
+    toml_path: toml_path,
+    lock_path_opt: lock_path_opt,
+  };
 
-  let planned_build = try!(planner.plan_build());
+  let planned_build = planner.plan_build(&settings, files).unwrap();
   let mut bazel_renderer = BazelRenderer::new();
   let render_details = RenderDetails {
     path_prefix: "./".to_owned(),

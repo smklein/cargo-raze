@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use cargo::util::CargoResult;
-use planning::PlannedBuild;
+use new_planning::PlannedBuild;
 
 #[derive(Debug, Clone)]
 pub struct FileOutputs {
