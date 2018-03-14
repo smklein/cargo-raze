@@ -6,7 +6,7 @@ alias(
 )
 {%- endif %}
 
-rust_library(
+trust_library(
     name = "{{ target_name_sanitized }}",
     crate_root = "{{ target.path }}",
     crate_type = "{{ target.kind }}",
