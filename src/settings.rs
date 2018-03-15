@@ -145,6 +145,17 @@ pub mod testing {
       genmode: GenMode::Remote,
     }
   }
+
+  pub fn dummy_crate_settings() -> CrateSettings {
+    CrateSettings {
+      additional_deps: Vec::new(),
+      skipped_deps: Vec::new(),
+      extra_aliased_targets: Vec::new(),
+      additional_flags: Vec::new(),
+      gen_buildrs: false,
+      data_attr: None,
+    }
+  }
 }
 
 fn default_raze_settings_field_target() -> String {
