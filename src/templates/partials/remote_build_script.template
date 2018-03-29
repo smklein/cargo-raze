@@ -41,5 +41,5 @@ genrule(
         + " export OUT_DIR=$$PWD/{{ crate_name_sanitized }}_out_dir_outputs;"
         + " export BINARY_PATH=\"$$PWD/$(location :{{ crate_name_sanitized }}_build_script)\";"
         + " export OUT_TAR=$$PWD/$@;"
-        + " cd $$(dirname $(location :Cargo.toml)) && $$BINARY_PATH && tar -czf $$OUT_TAR -C $$OUT_DIR .)"
+        + " cd $$(dirname $(location :Cargo.toml)) && ($$BINARY_PATH 2>&1 >/dev/null) && tar -czf $$OUT_TAR -C $$OUT_DIR .)"
 )
