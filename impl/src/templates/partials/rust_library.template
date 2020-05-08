@@ -24,9 +24,27 @@ rust_library(
         {%- for flag in crate.raze_settings.additional_flags %}
         "{{flag}}",
         {%- endfor %}
+    ] + [
+        repository_ctx.read(":{{ crate_name_sanitized }}_cfg_args"),
     ],
+#
+# TODO: cargo:rustc-cfg=XYZ
+#       --> --cfg=XYZ
+#
+#    rustc_flags.extend(":{{ crate_name_sanitized }}_cfg_args"),
+
+#
+# TODO: cargo:rustc-env=XYZ
+#       --> rustc_env = [ XYZ, ... ]
+#
+#   rustc_env = [ ":{{ crate_name_sanitized }}_env_args" ],
+
+#
+# TODO: Check for other cargo flags, throw errors maybe?
+#
+
     {%- if crate.build_script_target %}
-    out_dir_tar = ":{{ crate.pkg_name | replace(from="-", to="_")}}_build_script_executor",
+    out_dir_tar = ":{{ crate_name_sanitized }}_out_dir_outputs.tar.gz",
     {%- endif %}
     {%- if crate.raze_settings.data_attr %}
     data = {{crate.raze_settings.data_attr}},

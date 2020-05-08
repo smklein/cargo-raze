@@ -28,12 +28,17 @@ rust_binary(
 genrule(
     name = "{{ crate_name_sanitized  }}_build_script_executor",
     srcs = glob(["*", "**/*.rs"]),
-    outs = ["{{ crate_name_sanitized  }}_out_dir_outputs.tar.gz"],
+    outs = [
+      "{{ crate_name_sanitized  }}_out_dir_outputs.tar.gz",
+      "{{ crate_name_sanitized  }}_cargo_directives.txt",
+    ],
     tools = [
       ":{{ crate_name_sanitized  }}_build_script",
     ],
     tags = ["no-sandbox"],
-    cmd = "mkdir -p $$(dirname $@)/{{ crate_name_sanitized}}_out_dir_outputs/;"
+    cmd = "export OUTPUT_TARFILE='$(location {{ crate_name_sanitized }}_out_dir_outputs.tar.gz)';"
+        + "export OUTPUT_DIRECTIVES=$$PWD/'$(location {{ crate_name_sanitized }}_cargo_directives.txt)';"
+        + "mkdir -p $$(dirname $$OUTPUT_TARFILE)/{{ crate_name_sanitized}}_out_dir_outputs/;"
         + " (export CARGO_MANIFEST_DIR=\"$$PWD/$$(dirname $(location :Cargo.toml))\";"
         # TODO(acmcarther): This needs to be revisited as part of the cross compilation story.
         #                   See also: https://github.com/google/cargo-raze/pull/54
@@ -42,11 +47,48 @@ genrule(
         {%- for feature in crate.features %}
         + " export CARGO_FEATURE_{{ feature | upper | replace(from="-", to="_") }}=1;"
         {%- endfor %}
-        + " export OUT_DIR=$$PWD/$$(dirname $@)/{{ crate_name_sanitized }}_out_dir_outputs;"
+        + " export OUT_DIR=$$PWD/$$(dirname $$OUTPUT_TARFILE)/{{ crate_name_sanitized }}_out_dir_outputs;"
         + " export BINARY_PATH=\"$$PWD/$(location :{{ crate_name_sanitized }}_build_script)\";"
-        + " export OUT_TAR=$$PWD/$@;"
+        + " export OUT_TAR=$$PWD/$$OUTPUT_TARFILE;"
         {%- for environment_variable in crate.raze_settings.buildrs_additional_environment_variables %}
         + " export {{ environment_variable }};"
         {%- endfor %}
-        + " cd $$(dirname $(location :Cargo.toml)) && $$BINARY_PATH && tar -czf $$OUT_TAR -C $$OUT_DIR .)"
+        + " cd $$(dirname $(location :Cargo.toml)) && $$BINARY_PATH 1> $$OUTPUT_DIRECTIVES && tar -czf $$OUT_TAR -C $$OUT_DIR .); "
+        + " cat $$OUTPUT_DIRECTIVES"
+)
+
+# Filters lines beginning with:
+#   cargo:rustc-cfg=XYZ
+# And converts them to:
+#   --cfg=XYZ
+genrule(
+    name = "{{ crate_name_sanitized  }}_cfg_args",
+    srcs = [
+      "{{ crate_name_sanitized  }}_cargo_directives.txt",
+    ],
+    outs = [
+      "{{ crate_name_sanitized  }}_rustc_cfg_args.txt",
+    ],
+    cmd = "export OUTPUT_DIRECTIVES=$$PWD/'$(location {{ crate_name_sanitized }}_cargo_directives.txt)';"
+        + "export OUTPUT_CFG=$$PWD/'$(location {{ crate_name_sanitized }}_rustc_cfg_args.txt)';"
+        + "export PREFIX='cargo:rustc-cfg=';"
+        + "grep '^$$PREFIX' $$OUTPUT_DIRECTIVES | sed 's/^$$PREFIX/--cfg=/' > $$OUTPUT_CFG"
+)
+
+# Filters lines beginning with:
+#   cargo:rustc-env=XYZ
+# And converts them to:
+#   XYZ
+genrule(
+    name = "{{ crate_name_sanitized  }}_env_args",
+    srcs = [
+      "{{ crate_name_sanitized  }}_cargo_directives.txt",
+    ],
+    outs = [
+      "{{ crate_name_sanitized  }}_rustc_env_args.txt",
+    ],
+    cmd = "export OUTPUT_DIRECTIVES=$$PWD/'$(location {{ crate_name_sanitized }}_cargo_directives.txt)';"
+        + "export OUTPUT_ENV=$$PWD/'$(location {{ crate_name_sanitized }}_rustc_env_args.txt)';"
+        + "export PREFIX='cargo:rustc-env=';"
+        + "grep '^$$PREFIX' $$OUTPUT_DIRECTIVES | sed 's/^$$PREFIX//' > $$OUTPUT_ENV"
 )
